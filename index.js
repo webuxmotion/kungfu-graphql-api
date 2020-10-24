@@ -3,6 +3,7 @@ const { GraphQLScalarType } = require('graphql');
 const { Kind } = require('graphql/language');
 
 const typeDefs = gql`
+
   scalar Date
 
   enum Status {
@@ -11,18 +12,21 @@ const typeDefs = gql`
     NOT_INTERESTED
     UNKNOWN
   }
+
   type Actor {
     id: ID!
     name: String!
   }
+
   type Movie {
     id: ID!
     title: String
     releaseDate: Date
     rating: Int
     status: Status
-    actor: [Actor]
+    actors: [Actor]
   }
+
   type Query {
     movies: [Movie]
     movie(id: ID): Movie
@@ -35,11 +39,10 @@ const movies = [
     title: "5 Deadly Venoms",
     releaseDate: new Date("10-12-1983"),
     rating: 5,
-    actor: [
+    actors: [
       {
-        id: "dfdf",
-        name: "Gordon Liu"
-      }
+        id: "gordon"
+      },
     ]
   },
   {
@@ -50,7 +53,15 @@ const movies = [
   }
 ];
 
+const actors = [
+  {
+    id: "gordon",
+    name: "Gordon Liu actor"
+  },
+];
+
 const resolvers = {
+
   Query: {
     movies: () => {
       return movies;
@@ -60,6 +71,16 @@ const resolvers = {
       return foundMovie;
     }
   },
+
+  Movie: {
+    actors: (obj, arg, context) => {
+      const actorIds = obj.actors.map(actor => actor.id);
+      const filteredActors = actors.filter(actor => actorIds.includes(actor.id));
+
+      return filteredActors;
+    }
+  },
+
   Date: new GraphQLScalarType({
     name: "Date",
     description: "It's a date",
