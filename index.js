@@ -32,12 +32,21 @@ const typeDefs = gql`
     movie(id: ID): Movie
   }
 
+  input ActorInput {
+    id: ID
+  }
+
+  input MovieInput {
+    id: ID
+    title: String
+    releaseDate: Date
+    rating: Int
+    status: Status
+    actors: [ActorInput]
+  }
+
   type Mutation {
-    addMovie(
-      id: ID,
-      title: String,
-      releaseDate: Date
-    ): [Movie]
+    addMovie(movie: MovieInput): [Movie]
   }
 `;
 
@@ -107,12 +116,11 @@ const resolvers = {
   }),
 
   Mutation: {
-    addMovie: (obj, { id, title, releaseDate }, context) => {
+    addMovie: (obj, { movie }, context) => {
+      console.log('context', context);
       const newMoviesList = [
         ...movies,
-        {
-          id, title, releaseDate
-        }
+        movie
       ];
 
       return newMoviesList;
@@ -124,7 +132,17 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   introspection: true,
-  playground: true
+  playground: true,
+  context: ({ req }) => {
+    //console.log(req);
+    const fakeUser = {
+      userId: 'helloIAmUser'
+    }
+
+    return {
+      ...fakeUser
+    };
+  }
 });
 
 server.listen({
