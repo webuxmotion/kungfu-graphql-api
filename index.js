@@ -1,4 +1,4 @@
-const { ApolloServer, gql } = require('apollo-server');
+const { ApolloServer, gql, PubSub } = require('apollo-server');
 const { GraphQLScalarType } = require('graphql');
 const { Kind } = require('graphql/language');
 const mongoose = require('mongoose');
@@ -62,6 +62,10 @@ const typeDefs = gql`
   type Mutation {
     addMovie(movie: MovieInput): [Movie]
   }
+
+  type Subscription {
+    movieAdded: Movie
+  }
 `;
 
 const movies = [
@@ -91,7 +95,17 @@ const actors = [
   },
 ];
 
+const pubsub = new PubSub();
+const MOVIE_ADDED = 'MOVIE_ADDED';
+
 const resolvers = {
+  Subscription: {
+    movieAdded: {
+      subscribe: () => {
+        return pubsub.asyncIterator([MOVIE_ADDED])
+      }
+    }
+  },
 
   Query: {
     movies: async () => {
@@ -144,9 +158,13 @@ const resolvers = {
   Mutation: {
     addMovie: async (obj, { movie }, context) => {
       try {
-        await Movie.create({
+        
+
+        const movieAdded = await Movie.create({
           ...movie
         });
+
+        pubsub.publish(MOVIE_ADDED, { movieAdded });
   
         return Movie.find();
       } catch (e) {
